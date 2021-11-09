@@ -12,7 +12,7 @@
     "electron-packager": "electron-packager . ONNXjs-demo --win32 --ignore=\"/(src|types|public|node_modules)\""
   },
   "dependencies": {
-    "ndarray": "^1.0.18",
+    "ndarray": "^1.0.19",
     "ndarray-ops": "^1.2.2",
     "ndarray-resample": "^1.0.1",
     "ndarray-squeeze": "^1.0.2",
@@ -29,7 +29,6 @@
     "@types/long": "^4.0.0",
     "@types/ndarray": "^1.0.7",
     "@types/request": "^2.48.1",
-    "@types/webgl2": "0.0.4",
     "@vue/cli-plugin-babel": "^3.6.0",
     "@vue/cli-plugin-typescript": "^3.6.0",
     "@vue/cli-service": "^3.6.0",
