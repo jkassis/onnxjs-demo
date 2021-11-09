@@ -1,7 +1,7 @@
 <template>
   <ImageModelUI
     :modelFilepath="modelFilepath"
-    :imageSize="224"    
+    :imageSize="224"
     :imageUrls="imageUrls"
     :preprocess="preprocess"
     :getPredictedClass="getPredictedClass"
@@ -12,7 +12,7 @@
 import ndarray from 'ndarray';
 import ops from 'ndarray-ops';
 import ImageModelUI from '../common/ImageModelUI.vue';
-import {Tensor} from 'onnxjs';
+import {Tensor} from 'onnxruntime-web';
 import {Vue, Component} from 'vue-property-decorator';
 import {SQUEEZENET_IMAGE_URLS} from '../../data/sample-image-urls';
 import {imagenetUtils, mathUtils} from '../../utils/index';
@@ -58,7 +58,7 @@ export default class SqueezeNet extends Vue{
     ops.divseq(dataProcessedTensor.pick(0, 1, null, null), 0.224);
     ops.divseq(dataProcessedTensor.pick(0, 2, null, null), 0.225);
 
-    const tensor = new Tensor(new Float32Array(width * height * 3), 'float32', [1, 3, width, height]);
+    const tensor = new Tensor( 'float32',new Float32Array(width * height * 3), [1, 3, width, height]);
     (tensor.data as Float32Array).set(dataProcessedTensor.data);
     return tensor;
   }

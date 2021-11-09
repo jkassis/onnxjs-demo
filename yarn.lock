@@ -4099,6 +4099,11 @@ find-up@^4.0.0:
     locate-path "^5.0.0"
     path-exists "^4.0.0"
 
+flatbuffers@^1.12.0:
+  version "1.12.0"
+  resolved "https://registry.yarnpkg.com/flatbuffers/-/flatbuffers-1.12.0.tgz#72e87d1726cb1b216e839ef02658aa87dcef68aa"
+  integrity sha512-c7CZADjRcl6j0PlvFy0ZqXQ67qSEZfrVPynmnL+2zPc+NtMvrF8Y0QceMo7QqnSPc7+uWjUIAbvCQ5WIKlMVdQ==
+
 flatten@^1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/flatten/-/flatten-1.0.3.tgz#c1283ac9f27b368abc1e36d1ff7b04501a30356b"
@@ -4422,6 +4427,11 @@ graceful-fs@^4.1.11, graceful-fs@^4.1.15, graceful-fs@^4.1.2, graceful-fs@^4.1.6
   version "4.2.8"
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.8.tgz#e412b8d33f5e006593cbd3cee6df9f2cebbe802a"
   integrity sha512-qkIilPUYcNhJpd33n0GBXTB1MMPp14TxEsEs0pTrsSVucApsYzW5V+Q8Qxhik6KU3evy+qkAAowTByymK0avdg==
+
+guid-typescript@^1.0.9:
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/guid-typescript/-/guid-typescript-1.0.9.tgz#e35f77003535b0297ea08548f5ace6adb1480ddc"
+  integrity sha512-Y8T4vYhEfwJOTbouREvG+3XDsjr8E3kIr7uf+JZ0BYloFsttiHU0WfvANVsR7TxNUJa/WpCnw/Ino/p+DeBhBQ==
 
 gzip-size@^5.0.0:
   version "5.1.1"
@@ -6618,12 +6628,21 @@ onnx-proto@^4.0.4:
   dependencies:
     protobufjs "^6.8.8"
 
-onnxjs@^0.1.6:
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/onnxjs/-/onnxjs-0.1.8.tgz#333f5dba425de93204260d42e2b59136c63cbc5d"
-  integrity sha512-7yxFq6cOVUm23OW9gUvDcfkG9OR5Fkleaa4Ce+rhExQmI8OTx6hdb2/9I1jRbyVLJRxlL0MDQgQCb4YxdLcZGw==
+onnxruntime-common@~1.9.0:
+  version "1.9.0"
+  resolved "https://registry.yarnpkg.com/onnxruntime-common/-/onnxruntime-common-1.9.0.tgz#1ab2a111e0479251e5425bd2cdc640e87e7a2f6e"
+  integrity sha512-lt4tNb1lYHr2XbyeDTXvYdWIvqYXQeANAYmaIvvAq418bmBhY4pl5mpIegEowXOlyipYWQbcxnLVqB2kMXWIVg==
+
+onnxruntime-web@^1.9.0:
+  version "1.9.0"
+  resolved "https://registry.yarnpkg.com/onnxruntime-web/-/onnxruntime-web-1.9.0.tgz#8874be6103ff0f12c5ddf102715f86302f90cee3"
+  integrity sha512-NoY6o56BwBi//G/Vkusq6I3q0pli6P3WK6cVeDJoRYhNxSFMPHqdRPOcixO8ptqFCMp+U8daCfyht4d1J/XCtw==
   dependencies:
+    flatbuffers "^1.12.0"
+    guid-typescript "^1.0.9"
+    long "^4.0.0"
     onnx-proto "^4.0.4"
+    onnxruntime-common "~1.9.0"
     platform "^1.3.6"
 
 open@^6.3.0:

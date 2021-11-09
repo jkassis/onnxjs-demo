@@ -1,7 +1,7 @@
 
-import {Tensor} from 'onnxjs';
-import {NumberDataType} from './yoloPostprocess';
-import {arrayCopyHelper, ShapeUtil, TypedArrayUtil} from './yoloPostprocessUtils';
+import { Tensor } from 'onnxruntime-web';
+import { NumberDataType } from './yoloPostprocess';
+import { arrayCopyHelper, ShapeUtil, TypedArrayUtil } from './yoloPostprocessUtils';
 
 export function transpose(x: Tensor, perm?: number[]): Tensor {
   const inputDims = x.dims ? x.dims : [x.data.length];
@@ -35,7 +35,7 @@ export function transpose(x: Tensor, perm?: number[]): Tensor {
     }
   }
 
-  const output = new Tensor(TypedArrayUtil.createTypedArray(x.type, ShapeUtil.size(outputDims)),x.type, outputDims);
+  const output = new Tensor(x.type, TypedArrayUtil.createTypedArray(x.type, ShapeUtil.size(outputDims)), outputDims);
 
   const X = x.data as NumberDataType;
   const Y = output.data as NumberDataType;
@@ -71,8 +71,8 @@ export function transpose(x: Tensor, perm?: number[]): Tensor {
 // doTranspose: copies source tensor to target, transposing elements.
 // the stride vector indicates the transposition.
 function doTranspose(
-    numAxes: number, targetDims: number[], numBlocks: number, numElementsInBlock: number, stride: number[],
-    target: NumberDataType, source: NumberDataType) {
+  numAxes: number, targetDims: number[], numBlocks: number, numElementsInBlock: number, stride: number[],
+  target: NumberDataType, source: NumberDataType) {
   const targetIndex = new Array<number>(numAxes).fill(0);
 
   const startSourceIndex = 0;
@@ -91,8 +91,8 @@ function doTranspose(
 // num_elts_in_block=1 case. copies source tensor to target, transposing
 // elements. The stride vector indicates the transposition.
 function doTransposeEltWise(
-    numAxes: number, targetDims: number[], numBlocks: number, stride: number[], target: NumberDataType,
-    source: NumberDataType) {
+  numAxes: number, targetDims: number[], numBlocks: number, stride: number[], target: NumberDataType,
+  source: NumberDataType) {
   const targetIndex = new Array<number>(numAxes).fill(0);
 
   let startTargetIndex = 0;

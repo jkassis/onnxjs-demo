@@ -18,7 +18,7 @@ import WebcamModel from '../common/WebcamModelUI.vue';
 import {Vue, Component, Prop} from 'vue-property-decorator';
 import {runModelUtils, yolo, yoloTransforms} from '../../utils/index';
 import { YOLO_IMAGE_URLS } from '../../data/sample-image-urls';
-import {Tensor, InferenceSession} from 'onnxjs';
+import {Tensor, InferenceSession} from 'onnxruntime-web';
 
 const MODEL_FILEPATH_PROD = `/onnxjs-demo/yolo.onnx`;
 const MODEL_FILEPATH_DEV = '/yolo.onnx';
@@ -43,7 +43,7 @@ export default class Yolo extends Vue{
   warmupModel(session: InferenceSession) {
 		return runModelUtils.warmupModel(session, [1, 3, 416, 416]);
   }
-  
+
   preprocess(ctx: CanvasRenderingContext2D): Tensor {
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const { data, width, height } = imageData;
@@ -55,14 +55,14 @@ export default class Yolo extends Vue{
     ops.assign(dataProcessedTensor.pick(0, 1, null, null), dataTensor.pick(null, null, 1));
     ops.assign(dataProcessedTensor.pick(0, 2, null, null), dataTensor.pick(null, null, 2));
 
-    const tensor = new Tensor(new Float32Array(width* height* 3), 'float32', [1, 3, width, height]);
+    const tensor = new Tensor( 'float32',new Float32Array(width* height* 3), [1, 3, width, height]);
     (tensor.data as Float32Array).set(dataProcessedTensor.data);
     return tensor;
   }
 
   async postprocess(tensor: Tensor, inferenceTime: number) {
     try {
-      const originalOutput = new Tensor(tensor.data as Float32Array, 'float32', [1, 125, 13, 13]);
+      const originalOutput = new Tensor('float32', tensor.data as Float32Array, [1, 125, 13, 13]);
       const outputTensor = yoloTransforms.transpose(originalOutput, [0, 2, 3, 1]);
 
       // postprocessing
@@ -79,7 +79,7 @@ export default class Yolo extends Vue{
       alert('Model is not valid!');
     }
   }
-  
+
   drawRect(x: number, y: number, w: number, h: number, text = '', color = 'red') {
     const rect = document.createElement('div');
     rect.style.cssText = `top: ${y}px; left: ${x}px; width: ${w}px; height: ${h}px; border-color: ${color};`;

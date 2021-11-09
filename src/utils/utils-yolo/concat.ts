@@ -1,5 +1,5 @@
 
-import {Tensor} from 'onnxjs';
+import {Tensor} from 'onnxruntime-web';
 import {ShapeUtil, TypedArrayUtil} from './yoloPostprocessUtils';
 
 export function concat(x: Tensor[], axis: number): Tensor {
@@ -44,7 +44,7 @@ export function concat(x: Tensor[], axis: number): Tensor {
 
   // main logic
   // tslint:disable-next-line:max-line-length
-  const output = new Tensor(TypedArrayUtil.createTypedArray(x[0].type, ShapeUtil.size(outputShape)), input0.type, outputShape);
+  const output = new Tensor(input0.type, TypedArrayUtil.createTypedArray(x[0].type, ShapeUtil.size(outputShape)), outputShape);
   const Y = output.data;
 
   // the axisPitch is the number of elements to add to move

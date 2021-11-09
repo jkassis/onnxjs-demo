@@ -1,12 +1,12 @@
 <template>
   <div>
-    <model-status v-if="modelLoading || modelInitializing" 
+    <model-status v-if="modelLoading || modelInitializing"
       :modelLoading="modelLoading"
       :modelInitializing="modelInitializing"
-    ></model-status>      
+    ></model-status>
     <v-container fluid>
       <!-- Utility bar to select session backend configs. -->
-      <v-layout justify-center align-center style="margin: auto; width: 40%; padding: 40px">      
+      <v-layout justify-center align-center style="margin: auto; width: 40%; padding: 40px">
         <div class="select-backend"> Select Backend: </div>
         <v-select
           v-model="sessionBackend"
@@ -32,11 +32,11 @@
               width="416"
               height="416" style="position:absolute" v-show="!webcamEnabled"
             ></canvas>
-        </div>        
+        </div>
         <v-progress-circular v-show="sessionRunning" indeterminate color="primary" height="250px"/>
 
         <v-flex justify-center align-center sm6 class="text-xs-center" style="display: flex; flex-direction: column;">
-          <div class="text-xs-center" style="display: flex;justify-content: center;">              
+          <div class="text-xs-center" style="display: flex;justify-content: center;">
             <div v-if="imageLoadingError" class="error-message">Error loading URL</div>
             <div style="width: 70%">
               <v-select
@@ -50,7 +50,7 @@
             </div>
           </div>
           <v-card-text>or</v-card-text>
-          <div 
+          <div
             :disabled="modelLoading || modelInitializing || modelLoadingError || webcamEnabled"
             style="margin: 0; width: 30%" >
             <label class="inputs">
@@ -59,29 +59,29 @@
             </label>
           </div>
           <v-card-text>or</v-card-text>
-          
+
           <v-btn style="margin: 0; width: 30%" v-on:click="webcamController" :disabled="modelLoadingError">
             {{ webcamStatus }}
           </v-btn>
-        </v-flex>            
+        </v-flex>
 
       </v-layout>
-      
-    </v-container>                
+
+    </v-container>
     <canvas id ="screenshot" v-show="false"></canvas>
   </div>
 </template>
 
 <script lang="ts">
 /**
- * - setup() 
+ * - setup()
  * - capture()
  * - adjustVideoSize()
  * are adapted from:
  * https://github.com/ModelDepot/tfjs-yolo-tiny-demo/blob/master/src/webcam.js
  */
 
-import {InferenceSession, Tensor} from 'onnxjs';
+import {InferenceSession, Tensor} from 'onnxruntime-web';
 import {Vue, Component, Prop, Watch} from 'vue-property-decorator';
 import loadImage from 'blueimp-load-image';
 import ModelStatus from '../common/ModelStatus.vue';
@@ -114,7 +114,7 @@ export default class WebcamModelUI extends Vue{
   modelInitializing: boolean;
   sessionRunning: boolean;
   modelLoadingError: boolean;
-  
+
   imageURLInput: string;
   imageURLSelect: null;
   imageURLSelectList: Array<{text: string, value: string}>;
@@ -131,7 +131,7 @@ export default class WebcamModelUI extends Vue{
 
   constructor() {
     super();
-    this.inferenceTime = 0;        
+    this.inferenceTime = 0;
     this.imageURLInput = '';
     this.imageURLSelect = null;
     this.imageURLSelectList = this.imageUrls;
@@ -142,7 +142,7 @@ export default class WebcamModelUI extends Vue{
     this.modelInitializing = true;
     this.sessionRunning = false;
     this.modelLoadingError = false;
-    
+
     this.webcamEnabled = false;
     this.webcamInitialized = false;
 
@@ -151,15 +151,15 @@ export default class WebcamModelUI extends Vue{
     this.backendSelectList = [{text: 'GPU-WebGL', value: 'webgl'}, {text: 'CPU-WebAssembly', value: 'wasm'}];
   }
 
-  async mounted() {  
-    this.webcamElement = document.getElementById('webcam') as HTMLVideoElement;  
+  async mounted() {
+    this.webcamElement = document.getElementById('webcam') as HTMLVideoElement;
     this.webcamContainer = document.getElementById('webcam-container') as HTMLElement;
   }
 
   async created() {
     // fetch the model file to be used later
     const response = await fetch(this.modelFilepath);
-    this.modelFile = await response.arrayBuffer();  
+    this.modelFile = await response.arrayBuffer();
     try {
       await this.initSession();
     } catch (e) {
@@ -170,29 +170,27 @@ export default class WebcamModelUI extends Vue{
   async initSession() {
     this.sessionRunning = false;
     this.modelLoadingError = false;
-    if (this.sessionBackend === 'webgl') {        
-      if (this.gpuSession) {
-        this.session = this.gpuSession;
-        return;
-      }
-      this.modelLoading = true;
-      this.modelInitializing = true;  
-      this.gpuSession = new InferenceSession({backendHint: this.sessionBackend});
-      this.session = this.gpuSession;
-    }
-    if (this.sessionBackend === 'wasm') {        
-      if (this.cpuSession) {
-        this.session = this.cpuSession;
-        return;
-      }
-      this.modelLoading = true;
-      this.modelInitializing = true;  
-      this.cpuSession = new InferenceSession({backendHint: this.sessionBackend});
-      this.session = this.cpuSession;
-    }    
-    
     try {
-      await this.session!.loadModel(this.modelFile);
+      if (this.sessionBackend === 'webgl') {
+        if (this.gpuSession) {
+          this.session = this.gpuSession;
+          return;
+        }
+        this.modelLoading = true;
+        this.modelInitializing = true;
+        this.gpuSession = await InferenceSession.create(this.modelFile, { executionProviders: [this.sessionBackend] });
+        this.session = this.gpuSession;
+      }
+      if (this.sessionBackend === 'wasm') {
+        if (this.cpuSession) {
+          this.session = this.cpuSession;
+          return;
+        }
+        this.modelLoading = true;
+        this.modelInitializing = true;
+        this.cpuSession = await InferenceSession.create(this.modelFile, { executionProviders: [this.sessionBackend] });
+        this.session = this.cpuSession;
+      }
     } catch (e){
       this.modelLoading = false;
       this.modelInitializing = false;
@@ -204,7 +202,7 @@ export default class WebcamModelUI extends Vue{
       throw new Error('Error: Backend not supported. ');
     }
     this.modelLoading = false;
-    // warm up session with a sample tensor. Use setTimeout(..., 0) to make it an async execution so 
+    // warm up session with a sample tensor. Use setTimeout(..., 0) to make it an async execution so
     // that UI update can be done.
     if (this.sessionBackend === 'webgl') {
       setTimeout(() => {
@@ -261,7 +259,7 @@ export default class WebcamModelUI extends Vue{
     this.stopCamera();
     if (this.webcamInitialized) {
       this.webcamStream.getTracks()[0].stop();
-      
+
     }
   }
 
@@ -293,7 +291,7 @@ export default class WebcamModelUI extends Vue{
             const ctx = element.getContext('2d') as CanvasRenderingContext2D;
             const imageWidth = (img as HTMLImageElement).width;
             const imageHeight = (img as HTMLImageElement).height;
-            ctx.drawImage(img as HTMLImageElement, 0, 0, imageWidth, 
+            ctx.drawImage(img as HTMLImageElement, 0, 0, imageWidth,
               imageHeight, 0, 0, element.width, element.height);
             this.imageLoadingError = false;
             this.imageLoading = false;
@@ -351,7 +349,7 @@ export default class WebcamModelUI extends Vue{
   }
 
   async startCamera() {
-    if (!this.webcamInitialized) {      
+    if (!this.webcamInitialized) {
       this.sessionRunning = true;
       try {
         await this.setup();
@@ -361,22 +359,22 @@ export default class WebcamModelUI extends Vue{
         alert('no webcam found');
         return;
       }
-      this.webcamElement.play();      
+      this.webcamElement.play();
       this.webcamInitialized = true;
       this.sessionRunning = false;
     } else {
       await this.webcamElement.play();
-    }    
+    }
     this.webcamEnabled = true;
   }
-  
+
   async runLiveVideo() {
     await this.startCamera();
     if (!this.webcamEnabled) {
       return;
     }
     while (this.webcamEnabled) {
-      const ctx = this.capture();      
+      const ctx = this.capture();
       // run model
       await this.runModel(ctx);
       await new Promise(resolve => requestAnimationFrame(() => resolve()));
@@ -387,7 +385,7 @@ export default class WebcamModelUI extends Vue{
     this.sessionRunning = true;
     const data = this.preprocess(ctx);
     let outputTensor: Tensor;
-    [outputTensor, this.inferenceTime] = await runModelUtils.runModel(this.session, data);    
+    [outputTensor, this.inferenceTime] = await runModelUtils.runModel(this.session, data);
     this.clearRects();
     this.postprocess(outputTensor, this.inferenceTime);
     this.sessionRunning = false;
@@ -427,7 +425,7 @@ export default class WebcamModelUI extends Vue{
     canvas.width = Math.min(this.webcamElement.width, this.webcamElement.height);
     canvas.height = Math.min(this.webcamElement.width, this.webcamElement.height);
     const context = canvas.getContext('2d') as CanvasRenderingContext2D;
-    context.drawImage(this.webcamElement, beginWidth, beginHeight, this.videoOrigWidth, this.videoOrigHeight, 
+    context.drawImage(this.webcamElement, beginWidth, beginHeight, this.videoOrigWidth, this.videoOrigHeight,
         0, 0, this.webcamElement.width, this.webcamElement.height);
     return context;
   }
@@ -460,7 +458,7 @@ export default class WebcamModelUI extends Vue{
     margin-top: 30px;
     background-color: white;
     position: relative;
-    
+
 }
 .webcam-container {
   border-radius: 5px;

@@ -1,13 +1,13 @@
 <template>
   <div>
     <!-- session Loading and Initializing Indicator -->
-    <model-status v-if="modelLoading || modelInitializing" 
+    <model-status v-if="modelLoading || modelInitializing"
       :modelLoading="modelLoading"
       :modelInitializing="modelInitializing"
     ></model-status>
     <v-container fluid>
       <!-- Utility bar to select session backend configs. -->
-      <v-layout justify-center align-center style="margin: auto; width: 40%; padding: 30px">      
+      <v-layout justify-center align-center style="margin: auto; width: 40%; padding: 30px">
         <div class="select-backend"> Select Backend: </div>
         <v-select
           v-model="sessionBackend"
@@ -16,7 +16,7 @@
           label="Switch Backend"
           :menu-props="{maxHeight:'750'}"
           solo single-line hide-details
-        ></v-select>      
+        ></v-select>
       </v-layout>
       <v-layout>
         <v-flex v-if="modelLoadingError" style="padding-bottom: 30px;" class="error-message">
@@ -31,7 +31,7 @@
         </div>
         <!-- select input images -->
         <v-flex sm6 md4 align-center justify-start column fill-height>
-          <v-layout align-center> 
+          <v-layout align-center>
             <v-flex sm4>
               <v-select
                 v-model="imageURLSelect"
@@ -59,7 +59,7 @@
             ></canvas>
           </v-flex>
         </v-flex>
-        
+
         <v-flex sm6 md4 column fill-height class="output-container">
           <v-flex class="inference-time-class">
             <span class="inference-time">Inference Time: </span>
@@ -77,9 +77,9 @@
           </div>
         </v-flex>
       </v-layout>
-      
+
     </v-container>
-       
+
   </div>
 </template>
 
@@ -88,7 +88,7 @@ import loadImage from 'blueimp-load-image';
 import {runModelUtils} from '../../utils';
 
 import modelStatus from './ModelStatus.vue';
-import {InferenceSession, Tensor} from 'onnxjs';
+import {InferenceSession, Tensor} from 'onnxruntime-web';
 import {Vue, Component, Prop, Watch} from 'vue-property-decorator';
 
 @Component({
@@ -99,7 +99,7 @@ import {Vue, Component, Prop, Watch} from 'vue-property-decorator';
 
 export default class ImageModelUI extends Vue{
   @Prop({ type: String, required: true }) modelFilepath!: string;
-  @Prop({ type: Number, required: true }) imageSize!: number;  
+  @Prop({ type: Number, required: true }) imageSize!: number;
   @Prop({ type: Array, required: true}) imageUrls!: Array<{text: string, value: string}>;
   @Prop({ type: Function, required: true }) preprocess!: (ctx: CanvasRenderingContext2D) => Tensor;
   @Prop({ type: Function, required: true }) getPredictedClass !: (output: Float32Array) => {};
@@ -109,7 +109,7 @@ export default class ImageModelUI extends Vue{
   modelLoading: boolean;
   modelInitializing: boolean;
   modelLoadingError: boolean;
-  sessionRunning: boolean;  
+  sessionRunning: boolean;
   session: InferenceSession | undefined;
   gpuSession: InferenceSession | undefined;
   cpuSession: InferenceSession | undefined;
@@ -155,29 +155,28 @@ export default class ImageModelUI extends Vue{
   async initSession() {
     this.sessionRunning = false;
     this.modelLoadingError = false;
-    if (this.sessionBackend === 'webgl') { 
-      if (this.gpuSession) {
-        this.session = this.gpuSession;
-        return;
-      }
-      this.modelLoading = true;
-      this.modelInitializing = true;  
-      this.gpuSession = new InferenceSession({backendHint: this.sessionBackend});
-      this.session = this.gpuSession;
-    }
-    if (this.sessionBackend === 'wasm') {        
-      if (this.cpuSession) {
-        this.session = this.cpuSession;
-        return;
-      }
-      this.modelLoading = true;
-      this.modelInitializing = true;  
-      this.cpuSession = new InferenceSession({backendHint: this.sessionBackend});
-      this.session = this.cpuSession;
-    }    
-    
+
     try {
-      await this.session!.loadModel(this.modelFile);
+      if (this.sessionBackend === 'webgl') {
+        if (this.gpuSession) {
+          this.session = this.gpuSession;
+          return;
+        }
+        this.modelLoading = true;
+        this.modelInitializing = true;
+        this.gpuSession = await InferenceSession.create(this.modelFile, { executionProviders: [this.sessionBackend] });
+        this.session = this.gpuSession;
+      }
+      if (this.sessionBackend === 'wasm') {
+        if (this.cpuSession) {
+          this.session = this.cpuSession;
+          return;
+        }
+        this.modelLoading = true;
+        this.modelInitializing = true;
+        this.cpuSession = await InferenceSession.create(this.modelFile, { executionProviders: [this.sessionBackend] });
+        this.session = this.cpuSession;
+      }
     } catch (e){
       this.modelLoading = false;
       this.modelInitializing = false;
@@ -189,7 +188,7 @@ export default class ImageModelUI extends Vue{
       throw new Error('Error: Backend not supported. ');
     }
     this.modelLoading = false;
-    // warm up session with a sample tensor. Use setTimeout(..., 0) to make it an async execution so 
+    // warm up session with a sample tensor. Use setTimeout(..., 0) to make it an async execution so
     // that UI update can be done.
     if (this.sessionBackend === 'webgl') {
       setTimeout(() => {
@@ -201,7 +200,7 @@ export default class ImageModelUI extends Vue{
       await runModelUtils.warmupModel(this.session!, [1, 3, this.imageSize, this.imageSize]);
       this.modelInitializing = false;
     }
-    
+
   }
 
   @Watch('sessionBackend')
@@ -221,7 +220,7 @@ export default class ImageModelUI extends Vue{
     this.imageURLInput = newVal;
     this.loadImageToCanvas(newVal);
   }
-  
+
   beforeDestroy() {
     this.session = undefined;
     this.gpuSession = undefined;
@@ -289,7 +288,7 @@ export default class ImageModelUI extends Vue{
 
   async runModel() {
     const element = document.getElementById('input-canvas') as HTMLCanvasElement;
-    const ctx = element.getContext('2d') as CanvasRenderingContext2D;    
+    const ctx = element.getContext('2d') as CanvasRenderingContext2D;
     const preprocessedData = this.preprocess(ctx);
     let tensorOutput = null;
     [tensorOutput, this.inferenceTime] = await runModelUtils.runModel(this.session!, preprocessedData);
@@ -305,7 +304,7 @@ export default class ImageModelUI extends Vue{
     this.imageLoading = false;
     this.imageLoadingError = false;
     this.output = [];
-    
+
     const element = document.getElementById('input-canvas') as HTMLCanvasElement;
     if (element) {
       const ctx = element.getContext('2d');
@@ -400,7 +399,7 @@ export default class ImageModelUI extends Vue{
       font-size: 20px;
     }
   }
-  
+
 
   & .output-class {
     display: flex;

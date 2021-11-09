@@ -1,4 +1,4 @@
-import { Tensor } from 'onnxjs';
+import { Tensor } from 'onnxruntime-web';
 import { NumberDataType, NumberOrBoolType } from './yoloPostprocess';
 import { BroadcastUtil } from './yoloPostprocessUtils';
 import ndarray from 'ndarray';
@@ -15,7 +15,7 @@ export function binaryOp(
   }
   const rType = resultType ? resultType : x.type;
   // @ts-expect-error
-  const output = new Tensor(rType === 'bool' ? Uint8Array.from(result.data) : result.data as NumberDataType,
-    rType, result.shape);
+  const output = new Tensor(rType, rType === 'bool' ? Uint8Array.from(result.data) : result.data as NumberDataType,
+    result.shape);
   return output;
 }

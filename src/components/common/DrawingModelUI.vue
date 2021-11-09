@@ -1,13 +1,13 @@
 <template>
   <div>
-    <model-status v-if="modelLoading || modelInitializing" 
+    <model-status v-if="modelLoading || modelInitializing"
       :modelLoading="modelLoading"
       :modelInitializing="modelInitializing"
     ></model-status>
     <v-container fluid>
       <!-- Utility bar to select session backend configs. -->
-      <v-layout justify-center align-center style="margin: auto; width: 40%; padding: 40px">      
-        
+      <v-layout justify-center align-center style="margin: auto; width: 40%; padding: 40px">
+
         <div class="select-backend"> Select Backend: </div>
         <v-select
           v-model="sessionBackend"
@@ -42,7 +42,7 @@
               </div>
             </div>
             <v-layout align-end justify-end>
-                <v-btn 
+                <v-btn
                   color="primary"
                   @click="clear"
                   style="margin: 0px"
@@ -53,7 +53,7 @@
             </v-layout>
           </div>
         </v-flex>
-          
+
         <v-flex sm6 md4>
           <div class="output-column">
             <div class="output">
@@ -79,7 +79,7 @@
 import _ from 'lodash';
 import { mathUtils, runModelUtils } from '../../utils';
 import {Vue, Component, Prop, Watch} from 'vue-property-decorator';
-import {Tensor, InferenceSession} from 'onnxjs';
+import {Tensor, InferenceSession} from 'onnxruntime-web';
 import ModelStatus from '../common/ModelStatus.vue';
 
 @Component({
@@ -96,7 +96,7 @@ export default class DrawingModelUI extends Vue{
   modelLoading: boolean;
   modelInitializing: boolean;
   modelLoadingError: boolean;
-  sessionRunning: boolean;  
+  sessionRunning: boolean;
   input: Float32Array;
   output: Float32Array;
   outputClasses: number[];
@@ -135,47 +135,45 @@ export default class DrawingModelUI extends Vue{
       await this.initSession();
     } catch (e) {
       this.sessionBackend = 'wasm';
-    }  
+    }
   }
 
   async initSession() {
     this.sessionRunning = false;
     this.modelLoadingError = false;
-    if (this.sessionBackend === 'webgl') {        
-      if (this.gpuSession) {
-        this.session = this.gpuSession;
-        return;
-      }
-      this.modelLoading = true;
-      this.modelInitializing = true;  
-      this.gpuSession = new InferenceSession({backendHint: this.sessionBackend});
-      this.session = this.gpuSession;
-    }
-    if (this.sessionBackend === 'wasm') {        
-      if (this.cpuSession) {
-        this.session = this.cpuSession;
-        return;
-      }
-      this.modelLoading = true;
-      this.modelInitializing = true;  
-      this.cpuSession = new InferenceSession({backendHint: this.sessionBackend});
-      this.session = this.cpuSession;
-    }    
-    
     try {
-      await this.session!.loadModel(this.modelFile);
+      if (this.sessionBackend === 'webgl') {
+        if (this.gpuSession) {
+          this.session = this.gpuSession;
+          return;
+        }
+        this.modelLoading = true;
+        this.modelInitializing = true;
+        this.gpuSession = await InferenceSession.create(this.modelFile, { executionProviders: [this.sessionBackend] });
+        this.session = this.gpuSession;
+      }
+      if (this.sessionBackend === 'wasm') {
+        if (this.cpuSession) {
+          this.session = this.cpuSession;
+          return;
+        }
+        this.modelLoading = true;
+        this.modelInitializing = true;
+        this.cpuSession = await InferenceSession.create(this.modelFile, { executionProviders: [this.sessionBackend] });
+        this.session = this.cpuSession;
+      }
     } catch (e){
       this.modelLoading = false;
       this.modelInitializing = false;
       if (this.sessionBackend === 'webgl') {
-        this.gpuSession = undefined;
+      this.gpuSession = undefined;
       } else {
         this.cpuSession = undefined;
       }
       throw new Error('Error: Backend not supported. ');
     }
     this.modelLoading = false;
-    // warm up session with a sample tensor. Use setTimeout(..., 0) to make it an async execution so 
+    // warm up session with a sample tensor. Use setTimeout(..., 0) to make it an async execution so
     // that UI update can be done.
     if (this.sessionBackend === 'webgl') {
       setTimeout(() => {
@@ -215,7 +213,7 @@ export default class DrawingModelUI extends Vue{
     this.inferenceTime = time;
     this.sessionRunning = false;
   }
-  
+
   get predictedClass() {
     return this.getPredictedClass(this.output);
   }
@@ -234,7 +232,7 @@ export default class DrawingModelUI extends Vue{
     this.drawing = false;
     this.strokes = [];
   }
-  
+
   activateDraw(e: any) {
     if (this.modelLoading || this.modelInitializing || this.modelLoadingError) {
       return;

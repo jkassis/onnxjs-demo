@@ -1,4 +1,4 @@
-import {Tensor} from 'onnxjs';
+import {Tensor} from 'onnxruntime-web';
 import {NumberDataType} from './yoloPostprocess';
 import {ShapeUtil, TypedArrayUtil} from './yoloPostprocessUtils';
 
@@ -13,7 +13,7 @@ export function softmax(x: Tensor, axis: number): Tensor {
   const X = x.data as NumberDataType;
 
   const Y = TypedArrayUtil.createTypedArray(x.type, x.data.length);
-  
+
   for (let i = 0; i < N; i++) {
     // find row offset
     const offset = i * D;
@@ -44,5 +44,5 @@ export function softmax(x: Tensor, axis: number): Tensor {
     }
   }
 
-  return new Tensor(Y, x.type, inputDimensions);
+  return new Tensor(x.type, Y, inputDimensions);
 }

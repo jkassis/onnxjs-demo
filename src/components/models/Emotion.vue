@@ -8,7 +8,7 @@
 		:warmupModel="warmupModel"
 		:preprocess="preprocess"
 		:postprocess="postprocess"
-	></WebcamModel>    
+	></WebcamModel>
 	<canvas id = 'temp-canvas' v-show="false"/>
 	</div>
 </template>
@@ -18,7 +18,7 @@ import WebcamModel from '../common/WebcamModelUI.vue';
 import {Vue, Component} from 'vue-property-decorator';
 import {runModelUtils} from '../../utils/index';
 import { EMOTION_IMAGE_URLS } from '../../data/sample-image-urls';
-import {Tensor, InferenceSession} from 'onnxjs';
+import {Tensor, InferenceSession} from 'onnxruntime-web';
 
 import {softmax} from '../../utils/math';
 
@@ -40,7 +40,7 @@ export default class Emotion extends Vue{
 		this.imageUrls = EMOTION_IMAGE_URLS;
 	  this.modelFilepath = process.env.NODE_ENV === 'production' ? MODEL_FILEPATH_PROD : MODEL_FILEPATH_DEV;
 	}
-	
+
 	warmupModel(session: InferenceSession) {
 		return runModelUtils.warmupModel(session, [1, 1, 64, 64]);
 	}
@@ -54,7 +54,7 @@ export default class Emotion extends Vue{
     for (let i = 0; i < data.length; i+= 4) {
       greyScale.push((data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114 - 127.5)/127.5);
 		}
-    const tensor = new Tensor(new Float32Array(width*height), 'float32', [1, 1, width, height]);
+    const tensor = new Tensor('float32', new Float32Array(width*height), [1, 1, width, height]);
     (tensor.data as Float32Array).set(greyScale);
 		return tensor;
   }
@@ -73,7 +73,7 @@ export default class Emotion extends Vue{
 		const emotionMap = ['neutral', 'happiness', 'surprise', 'sadness', 'anger',
        'disgust', 'fear', 'contempt'];
     const myOutput = softmax(Array.prototype.slice.call(output));
-    
+
 		let maxInd = -1;
 		let maxProb = -1;
 		for (let i = 0; i < myOutput.length; i++) {
@@ -82,7 +82,7 @@ export default class Emotion extends Vue{
 				maxInd = i;
 			}
 		}
-		
+
     this.drawRect(416/2 - 75, 0, 150, 50, `${emotionMap[maxInd]}\nTime: ${inferenceTime.toFixed(1)}ms`);
 	}
 
